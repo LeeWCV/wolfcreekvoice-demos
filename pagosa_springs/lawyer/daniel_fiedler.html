@@ -158,10 +158,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07101e;color:#ddeef
 
     <p class="pain-label">Revenue slipping away right now</p>
     <ul class="pains">
-      <li><span class="chk">&#10003;</span>Need to create or update a will or trust</li><li><span class="chk">&#10003;</span>Starting a business and need legal guidance</li><li><span class="chk">&#10003;</span>Real estate transaction requiring legal review</li>
+      <li><span class="chk">&#10003;</span>Need help creating a will or trust</li><li><span class="chk">&#10003;</span>Questions about protecting assets for family</li><li><span class="chk">&#10003;</span>Starting or structuring a business</li>
     </ul>
 
-    <div class="chips"><div class="service-chip">Estate Planning & Trusts</div><div class="service-chip">Real Estate Law</div><div class="service-chip">Business & Corporate Law</div><div class="service-chip">Elder Law</div></div>
+    <div class="chips"><div class="service-chip">Estate Planning & Trusts</div><div class="service-chip">Elder Law</div><div class="service-chip">Real Estate Law</div><div class="service-chip">Business & Corporate Law</div></div>
 
     <div class="cta-row">
       <a href="https://ai.wolfcreekvoice.com" class="btn-primary">Book a free demo call</a>
@@ -271,22 +271,33 @@ function switchMode(mode){
   }
 }
 
-// ── Retell widget launchers
-function _retellWidget(){
-  return document.querySelector('retell-widget')||document.querySelector('[class*="retell"]')||null;
+// ── Retell widget helpers
+// The floating Retell button is pushed off-screen with CSS transform (NOT display:none)
+// so it stays fully clickable. Our buttons find it in the shadow DOM and click it directly.
+
+function _retellShadowBtn(){
+  var w=document.querySelector('retell-widget');
+  if(!w) return null;
+  if(w.shadowRoot){
+    var btn=w.shadowRoot.querySelector('button');
+    if(btn) return btn;
+  }
+  return w;
 }
+
 function openRetellChat(){
-  var w=_retellWidget();
-  if(w&&typeof w.openChat==='function'){ w.openChat(); return; }
-  if(w&&typeof w.open==='function'){ w.setAttribute('data-mode','chat'); w.open(); return; }
-  if(w) w.click();
+  var btn=_retellShadowBtn();
+  if(!btn) return;
+  // Briefly move widget on-screen so the click registers, then push back off
+  var w=document.querySelector('retell-widget');
+  if(w) w.style.transform='translateY(0)';
+  btn.click();
+  setTimeout(function(){ if(w) w.style.transform='translateY(300px)'; },300);
 }
+
 function openRetellVoice(){
-  var w=_retellWidget();
-  if(w&&typeof w.openVoice==='function'){ w.openVoice(); return; }
-  if(w&&typeof w.open==='function'){ w.setAttribute('data-mode','voice'); w.open(); return; }
-  if(w) w.click();
-  // Start visual timer as feedback
+  // Voice: same trigger — Retell chat widget opens; start local timer as visual feedback
+  openRetellChat();
   clearInterval(timerInterval);
   seconds=0;
   timerInterval=setInterval(function(){
@@ -296,30 +307,24 @@ function openRetellVoice(){
     document.getElementById('timer').textContent=m+':'+s;
   },1000);
   document.querySelector('.voice-status').innerHTML='<span class="v-sdot"></span>Connecting&hellip;';
-  setTimeout(function(){ document.querySelector('.voice-status').innerHTML='<span class="v-sdot"></span>Live call in progress'; },2000);
+  setTimeout(function(){ document.querySelector('.voice-status').innerHTML='<span class="v-sdot"></span>Live call in progress'; },2500);
 }
+
+// Push Retell floating button off-screen (keeps it clickable unlike display:none)
+(function(){
+  function pushOffscreen(){
+    var w=document.querySelector('retell-widget');
+    if(!w) return;
+    w.style.cssText+='transform:translateY(300px)!important;transition:none!important;';
+  }
+  setTimeout(pushOffscreen,800);
+  setTimeout(pushOffscreen,2000);
+})();
 </script>
 <script>
 (function(){
   var p=new URLSearchParams({event:"demo_viewed",adid:"DD-20260414-0001",biz:encodeURIComponent("Daniel Fiedler"),niche:encodeURIComponent("lawyer"),city:encodeURIComponent("Pagosa Springs"),ts:new Date().toISOString()});
   fetch("https://services.leadconnectorhq.com/hooks/YCIJANn4VqrppIZNvmCN/webhook-trigger/27938efd-e59b-4623-87d5-53f08a420b9e"+"?"+p.toString(),{method:"GET",mode:"no-cors"}).catch(function(){});
-})();
-</script>
-<script>
-/* Hide Retell floating bot icon */
-(function(){
-  function hideBtn(){
-    var w=document.querySelector('retell-widget');
-    if(!w) return;
-    if(w.shadowRoot){
-      var s=document.createElement('style');
-      s.textContent='button{display:none!important}[class*=trigger]{display:none!important}';
-      w.shadowRoot.appendChild(s);
-    }
-    var c=w.firstElementChild;
-    while(c){c.style.display='none';c=c.nextElementSibling;}
-  }
-  setTimeout(hideBtn,1500);setTimeout(hideBtn,3500);
 })();
 </script>
 </body>
