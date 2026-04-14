@@ -158,10 +158,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07101e;color:#ddeef
 
     <p class="pain-label">Revenue slipping away right now</p>
     <ul class="pains">
-      <li><span class="chk">&#10003;</span>Need help creating a will or trust</li><li><span class="chk">&#10003;</span>Questions about protecting assets for family</li><li><span class="chk">&#10003;</span>Starting or structuring a business</li>
+      <li><span class="chk">&#10003;</span>Worried about protecting assets for family</li><li><span class="chk">&#10003;</span>Confused about setting up a will or trust</li><li><span class="chk">&#10003;</span>Need help with a real estate transaction</li>
     </ul>
 
-    <div class="chips"><div class="service-chip">Estate Planning & Trusts</div><div class="service-chip">Elder Law</div><div class="service-chip">Real Estate Law</div><div class="service-chip">Business & Corporate Law</div></div>
+    <div class="chips"><div class="service-chip">Estate Planning & Trusts</div><div class="service-chip">Real Estate Law</div><div class="service-chip">Business & Corporate Law</div><div class="service-chip">Elder Law</div></div>
 
     <div class="cta-row">
       <a href="https://ai.wolfcreekvoice.com" class="btn-primary">Book a free demo call</a>
@@ -202,7 +202,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07101e;color:#ddeef
             <span style="margin-left:auto;color:#4a6a80;font-size:13px">&#8943;</span>
           </div>
           <div class="chat-msgs" id="msgs">
-            <div class="cmsg" id="m0"><div class="mav">S</div><div class="bub bub-a">Welcome to Daniel L. Fiedler, Attorney at Law! I'm here to help answer your questions abou</div></div>
+            <div class="cmsg" id="m0"><div class="mav">S</div><div class="bub bub-a">Welcome to the Law Office of Daniel L. Fiedler! I'm here to help answer your questions abo</div></div>
             <div class="cmsg cmsg-u" id="m1"><div class="bub bub-u">Do you have any openings this week?</div></div>
             <div class="cmsg" id="m2"><div class="mav">S</div><div class="bub bub-a">Absolutely! We have several times available. Which day works best for you?</div></div>
             <div class="cmsg cmsg-u" id="m3"><div class="bub bub-u">Thursday afternoon</div></div>
@@ -247,7 +247,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07101e;color:#ddeef
 <script id="retell-widget" src="https://dashboard.retellai.com/retell-widget.js" type="module" data-public-key="public_key_e34ce2c3f5a3b89fa88fd" data-agent-id="agent_18ddf848da03d0cf09afac743b" data-agent-version="0" data-title="Daniel Fiedler AI Assistant" data-subtitle="Powered by Wolf Creek Voice" data-primary-color="#22d3a4" data-variables='{"business_name":"Daniel Fiedler","city":"Pagosa Springs","niche":"lawyer","phone":"(970) 507-8528","kb_id":""}'></script>
 
 <script>
-// ── Demo animation (chat messages fade in to show conversation)
+// ── Demo animation
 [500,1700,2900,4100,5400].forEach(function(d,i){
   setTimeout(function(){ var el=document.getElementById('m'+i); if(el) el.classList.add('show'); }, d);
 });
@@ -264,17 +264,61 @@ function switchMode(mode){
   if(mode==='chat'){
     chat.classList.remove('hidden'); voice.classList.add('hidden');
     bc.classList.add('active-chat');
-    clearInterval(timerInterval); seconds=0; document.getElementById('timer').textContent='00:00';
+    clearInterval(timerInterval); seconds=0;
+    var t=document.getElementById('timer'); if(t) t.textContent='00:00';
   } else {
     voice.classList.remove('hidden'); chat.classList.add('hidden');
     bv.classList.add('active-voice');
   }
 }
 
-// ── Retell widget helpers
-// The floating Retell button is pushed off-screen with CSS transform (NOT display:none)
-// so it stays fully clickable. Our buttons find it in the shadow DOM and click it directly.
+// ── Retell: move chat panel INTO the phone screen when it opens
+var retellMoved=false;
 
+function injectRetellIntoPhone(node){
+  if(retellMoved) return;
+  var phone=document.querySelector('.phone');
+  if(!phone) return;
+  retellMoved=true;
+
+  // Style the panel to fill the phone screen exactly
+  node.style.cssText=[
+    'position:absolute','inset:0','z-index:50',
+    'border-radius:36px','overflow:hidden',
+    'width:100%','height:100%',
+    'max-width:none','max-height:none',
+    'box-shadow:none','margin:0'
+  ].join('!important;')+'!important';
+
+  // Make all children fill 100%
+  [].forEach.call(node.children,function(c){
+    c.style.cssText='width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border-radius:0!important;';
+  });
+
+  phone.style.overflow='hidden';
+  phone.style.position='relative';
+  phone.appendChild(node);
+}
+
+// Watch the DOM for Retell's chat panel appearing
+var retellObserver=new MutationObserver(function(mutations){
+  mutations.forEach(function(m){
+    m.addedNodes.forEach(function(n){
+      if(n.nodeType!==1) return;
+      // Retell typically renders a div with class or id containing 'retell'
+      var txt=(n.className||'')+(n.id||'');
+      var inner=n.innerHTML||'';
+      if(txt.toLowerCase().includes('retell')||
+         inner.toLowerCase().includes('retell')||
+         (n.tagName==='DIV' && n.style.position==='fixed' && n.style.zIndex>'999')){
+        injectRetellIntoPhone(n);
+      }
+    });
+  });
+});
+retellObserver.observe(document.body,{childList:true,subtree:false});
+
+// ── Shadow DOM button finder
 function _retellShadowBtn(){
   var w=document.querySelector('retell-widget');
   if(!w) return null;
@@ -286,17 +330,15 @@ function _retellShadowBtn(){
 }
 
 function openRetellChat(){
+  retellMoved=false; // allow re-injection if closed/reopened
   var btn=_retellShadowBtn();
-  if(!btn) return;
-  // Briefly move widget on-screen so the click registers, then push back off
   var w=document.querySelector('retell-widget');
   if(w) w.style.transform='translateY(0)';
-  btn.click();
-  setTimeout(function(){ if(w) w.style.transform='translateY(300px)'; },300);
+  if(btn) btn.click();
+  setTimeout(function(){ if(w) w.style.transform='translateY(300px)'; },400);
 }
 
 function openRetellVoice(){
-  // Voice: same trigger — Retell chat widget opens; start local timer as visual feedback
   openRetellChat();
   clearInterval(timerInterval);
   seconds=0;
@@ -304,13 +346,16 @@ function openRetellVoice(){
     seconds++;
     var m=Math.floor(seconds/60).toString().padStart(2,'0');
     var s=(seconds%60).toString().padStart(2,'0');
-    document.getElementById('timer').textContent=m+':'+s;
+    var t=document.getElementById('timer'); if(t) t.textContent=m+':'+s;
   },1000);
-  document.querySelector('.voice-status').innerHTML='<span class="v-sdot"></span>Connecting&hellip;';
-  setTimeout(function(){ document.querySelector('.voice-status').innerHTML='<span class="v-sdot"></span>Live call in progress'; },2500);
+  var vs=document.querySelector('.voice-status');
+  if(vs) vs.innerHTML='<span class="v-sdot"></span>Connecting&hellip;';
+  setTimeout(function(){
+    if(vs) vs.innerHTML='<span class="v-sdot"></span>Live call in progress';
+  },2500);
 }
 
-// Push Retell floating button off-screen (keeps it clickable unlike display:none)
+// Push Retell floating button off-screen (keeps it clickable)
 (function(){
   function pushOffscreen(){
     var w=document.querySelector('retell-widget');
