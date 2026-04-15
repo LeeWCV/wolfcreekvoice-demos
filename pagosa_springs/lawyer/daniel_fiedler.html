@@ -158,10 +158,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07101e;color:#ddeef
 
     <p class="pain-label">Revenue slipping away right now</p>
     <ul class="pains">
-      <li><span class="chk">&#10003;</span>Worried about protecting assets for family</li><li><span class="chk">&#10003;</span>Confused about setting up a will or trust</li><li><span class="chk">&#10003;</span>Need help with a real estate transaction</li>
+      <li><span class="chk">&#10003;</span>Need to create a will or trust</li><li><span class="chk">&#10003;</span>Starting or restructuring a business</li><li><span class="chk">&#10003;</span>Real estate transaction questions</li>
     </ul>
 
-    <div class="chips"><div class="service-chip">Estate Planning & Trusts</div><div class="service-chip">Real Estate Law</div><div class="service-chip">Business & Corporate Law</div><div class="service-chip">Elder Law</div></div>
+    <div class="chips"><div class="service-chip">Estate Planning & Wills/Trusts</div><div class="service-chip">Elder Law</div><div class="service-chip">Real Estate Law</div><div class="service-chip">Business & Corporate Law</div></div>
 
     <div class="cta-row">
       <a href="https://ai.wolfcreekvoice.com" class="btn-primary">Book a free demo call</a>
@@ -202,7 +202,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07101e;color:#ddeef
             <span style="margin-left:auto;color:#4a6a80;font-size:13px">&#8943;</span>
           </div>
           <div class="chat-msgs" id="msgs">
-            <div class="cmsg" id="m0"><div class="mav">S</div><div class="bub bub-a">Welcome to the Law Office of Daniel L. Fiedler! I'm here to help answer your questions abo</div></div>
+            <div class="cmsg" id="m0"><div class="mav">S</div><div class="bub bub-a">Welcome to Daniel L. Fiedler, Attorney at Law! I'm here to help you with questions about e</div></div>
             <div class="cmsg cmsg-u" id="m1"><div class="bub bub-u">Do you have any openings this week?</div></div>
             <div class="cmsg" id="m2"><div class="mav">S</div><div class="bub bub-a">Absolutely! We have several times available. Which day works best for you?</div></div>
             <div class="cmsg cmsg-u" id="m3"><div class="bub bub-u">Thursday afternoon</div></div>
@@ -272,52 +272,6 @@ function switchMode(mode){
   }
 }
 
-// ── Retell: move chat panel INTO the phone screen when it opens
-var retellMoved=false;
-
-function injectRetellIntoPhone(node){
-  if(retellMoved) return;
-  var phone=document.querySelector('.phone');
-  if(!phone) return;
-  retellMoved=true;
-
-  // Style the panel to fill the phone screen exactly
-  node.style.cssText=[
-    'position:absolute','inset:0','z-index:50',
-    'border-radius:36px','overflow:hidden',
-    'width:100%','height:100%',
-    'max-width:none','max-height:none',
-    'box-shadow:none','margin:0'
-  ].join('!important;')+'!important';
-
-  // Make all children fill 100%
-  [].forEach.call(node.children,function(c){
-    c.style.cssText='width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border-radius:0!important;';
-  });
-
-  phone.style.overflow='hidden';
-  phone.style.position='relative';
-  phone.appendChild(node);
-}
-
-// Watch the DOM for Retell's chat panel appearing
-var retellObserver=new MutationObserver(function(mutations){
-  mutations.forEach(function(m){
-    m.addedNodes.forEach(function(n){
-      if(n.nodeType!==1) return;
-      // Retell typically renders a div with class or id containing 'retell'
-      var txt=(n.className||'')+(n.id||'');
-      var inner=n.innerHTML||'';
-      if(txt.toLowerCase().includes('retell')||
-         inner.toLowerCase().includes('retell')||
-         (n.tagName==='DIV' && n.style.position==='fixed' && n.style.zIndex>'999')){
-        injectRetellIntoPhone(n);
-      }
-    });
-  });
-});
-retellObserver.observe(document.body,{childList:true,subtree:false});
-
 // ── Shadow DOM button finder
 function _retellShadowBtn(){
   var w=document.querySelector('retell-widget');
@@ -329,8 +283,57 @@ function _retellShadowBtn(){
   return w;
 }
 
+// ── Reposition Retell panel over the phone screen (NO DOM move — avoids blank render)
+var retellPositioned=false;
+function repositionRetellPanel(panel){
+  if(retellPositioned) return;
+  retellPositioned=true;
+
+  var phone=document.querySelector('.phone');
+  if(!phone) return;
+  var r=phone.getBoundingClientRect();
+
+  // Overlay the panel exactly on top of the phone screen
+  panel.style.setProperty('position','fixed','important');
+  panel.style.setProperty('left', r.left+'px','important');
+  panel.style.setProperty('top', r.top+'px','important');
+  panel.style.setProperty('right','auto','important');
+  panel.style.setProperty('bottom','auto','important');
+  panel.style.setProperty('width', r.width+'px','important');
+  panel.style.setProperty('height', r.height+'px','important');
+  panel.style.setProperty('z-index','9000','important');
+  panel.style.setProperty('border-radius','36px','important');
+  panel.style.setProperty('overflow','hidden','important');
+  panel.style.setProperty('transform','none','important');
+  panel.style.setProperty('margin','0','important');
+
+  // Hide the phone's demo content — Retell's UI is now on top
+  var demoContent=document.getElementById('chatPanel');
+  if(demoContent) demoContent.style.visibility='hidden';
+
+  // Show a thin phone-bezel ring around Retell so it looks framed
+  phone.style.setProperty('border','2px solid rgba(255,255,255,.14)','important');
+}
+
+// Watch document.body for Retell's panel appearing (fixed-position div added by Retell)
+var retellObserver=new MutationObserver(function(mutations){
+  mutations.forEach(function(m){
+    m.addedNodes.forEach(function(n){
+      if(n.nodeType!==1) return;
+      if(n===document.querySelector('retell-widget')) return;
+      // Retell's chat panel renders as a fixed-position div with high z-index
+      var s=window.getComputedStyle(n);
+      var zIndex=parseInt(s.zIndex)||0;
+      if(s.position==='fixed' && zIndex>100){
+        repositionRetellPanel(n);
+      }
+    });
+  });
+});
+retellObserver.observe(document.body,{childList:true,subtree:false});
+
 function openRetellChat(){
-  retellMoved=false; // allow re-injection if closed/reopened
+  retellPositioned=false; // allow re-trigger on reopen
   var btn=_retellShadowBtn();
   var w=document.querySelector('retell-widget');
   if(w) w.style.transform='translateY(0)';
@@ -340,8 +343,7 @@ function openRetellChat(){
 
 function openRetellVoice(){
   openRetellChat();
-  clearInterval(timerInterval);
-  seconds=0;
+  clearInterval(timerInterval); seconds=0;
   timerInterval=setInterval(function(){
     seconds++;
     var m=Math.floor(seconds/60).toString().padStart(2,'0');
@@ -355,7 +357,7 @@ function openRetellVoice(){
   },2500);
 }
 
-// Push Retell floating button off-screen (keeps it clickable)
+// Push Retell floating button off-screen (stays clickable)
 (function(){
   function pushOffscreen(){
     var w=document.querySelector('retell-widget');
